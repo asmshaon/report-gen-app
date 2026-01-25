@@ -1,0 +1,59 @@
+body {
+    background-color: #f8f9fa;
+    padding-top: 30px;
+    padding-bottom: 50px;
+}
+
+.card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: none;
+}
+
+.form-group label {
+    font-weight: bold;
+    color: #495057;
+}
+
+.html-code-area {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.85rem;
+    background-color: #f1f3f5;
+}
+
+.action-btns {
+    width: 160px;
+    text-align: right;
+}
+
+.container {
+    max-width: 1100px;
+}
+
+.section-header {
+    border-bottom: 2px solid #007bff;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    color: #007bff;
+}
+
+.home-text {
+    text-align: center;
+    margin: 50px auto auto auto;
+    width: 50%;
+}
+
+.home-link {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: bold;
+    text-decoration: none;
+    display: block;
+    padding-top: 20px;
+}
+
+.report-get-btn {
+    white-space: nowrap;
+}
+
+.custom-select {
+    cursor: pointer;
+}

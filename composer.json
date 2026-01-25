@@ -1,0 +1,14 @@
+{
+    "name": "awesome-report-gen/app",
+    "description": "Stock Report Generator Application",
+    "type": "project",
+    "require": {
+        "php": ">=5.5",
+        "mpdf/mpdf": "^6.1"
+    },
+    "autoload": {
+        "classmap": [
+            "app/services/"
+        ]
+    }
+}
