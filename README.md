@@ -1,4 +1,4 @@
-# Awesome Report Generator Application
+# Abu Report Generator Application
 
 A stock market research report generation tool that creates professional HTML, PDF, and interactive flipbook reports with real-time TradingView charts.
 

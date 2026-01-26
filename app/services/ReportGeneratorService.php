@@ -356,6 +356,8 @@ class ReportGeneratorService
             $ticker = isset($stock['Ticker']) ? $stock['Ticker'] : '';
             $replacements['[Chart]'] = $this->generateTradingViewWidget($ticker);
             $replacements['[Target Price]'] = isset($stock['Target Price']) ? $stock['Target Price'] : (isset($stock['Price']) ? $stock['Price'] : '');
+            $marketCap = isset($stock['Market Cap']) && is_numeric($stock['Market Cap']) ? ($stock['Market Cap'] / 1000) : null;
+            $replacements['[Market Cap]'] = $marketCap !== null ? number_format($marketCap, 2) . 'B' : '';
         }
 
         uksort($replacements, function($a, $b) {
@@ -489,7 +491,12 @@ class ReportGeneratorService
             $articleBody .= $stockHtml;
         }
 
-        // No disclaimer in PDF
+        if (!empty($config['content_templates']['disclaimer_html'])) {
+            $disclaimerHtml = $config['content_templates']['disclaimer_html'];
+            $articleBody .= '<div style="page-break-before: always;">' . $disclaimerHtml . '</div>';
+        }
+
+        // Close article-body
         $articleBody .= '</div>';
 
         // Build a complete HTML document with proper styling for PDF
