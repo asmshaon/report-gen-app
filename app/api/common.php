@@ -2,7 +2,7 @@
 
 /**
  * Common utilities for API endpoints
- * Provides shared functionality for all API files
+ * Provide shared functionality for all API files
  */
 
 // Set timezone
