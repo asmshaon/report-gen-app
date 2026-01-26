@@ -684,7 +684,6 @@ class ReportGeneratorService
 		    }
 
 		    function getSize() {
-		      console.log("get size");
 		      var width;
 		      var height;
 		      if($(window).width() > 980){
@@ -702,10 +701,7 @@ class ReportGeneratorService
 		    }
 
 		    function resize() {
-		      console.log("resize event triggered");
-
 		      var size = getSize();
-		      console.log(size);
 
 		      if (size.width > size.height) { // landscape
 		        $(".flipbook").turn("display", "double");
