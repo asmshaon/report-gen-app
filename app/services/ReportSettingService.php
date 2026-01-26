@@ -25,7 +25,7 @@ class ReportSettingService
     private $reportsPath;
 
     /**
-     * @var string Path to settings file
+     * @var string Path to the settings file
      */
     private $settingsFile;
 
@@ -48,9 +48,17 @@ class ReportSettingService
      */
     private function ensureDirectoriesExist()
     {
-        mkdir($this->imagesPath, 0755, true);
-        mkdir($this->reportsPath, 0755, true);
-        mkdir($this->dataPath, 0755, true);
+        if (!is_dir($this->imagesPath)) {
+            mkdir($this->imagesPath, 0755, true);
+        }
+
+        if (!is_dir($this->reportsPath)) {
+            mkdir($this->reportsPath, 0755, true);
+        }
+
+        if (!is_dir($this->dataPath)) {
+            mkdir($this->dataPath, 0755, true);
+        }
     }
 
     /**
@@ -65,9 +73,8 @@ class ReportSettingService
         }
 
         $content = file_get_contents($this->settingsFile);
-        $data = json_decode($content, true);
 
-        return $data;
+        return json_decode($content, true);
     }
 
     /**
@@ -142,7 +149,7 @@ class ReportSettingService
         // Determine if this is an update or create
         $isUpdate = isset($input['id']) && !empty($input['id']);
 
-        // Keep original file_name for JSON storage, sanitize for file operations
+        // Keep the original file_name for JSON storage, sanitize for file operations
         $originalFileName = isset($input['file_name']) ? $input['file_name'] : '';
         $sanitizedFileName = sanitizeFilename($originalFileName);
 
@@ -156,12 +163,6 @@ class ReportSettingService
         $coverImage = null;
         if (isset($files['pdf_cover']) && $files['pdf_cover']['error'] == 0) {
             $coverImage = handleImageUpload($files['pdf_cover'], $this->imagesPath, $sanitizedFileName, 'cover');
-        }
-
-        // Handle manual PDF upload
-        $manualPdf = null;
-        if (isset($files['manual_pdf']) && $files['manual_pdf']['error'] == 0) {
-            $manualPdf = $this->handleManualPdfUpload($files['manual_pdf'], $sanitizedFileName);
         }
 
         // Build report object
@@ -194,17 +195,20 @@ class ReportSettingService
                     if ($report['images']['article_image'] === null && isset($r['images']['article_image'])) {
                         $report['images']['article_image'] = $r['images']['article_image'];
                     }
+
                     if ($report['images']['pdf_cover_image'] === null && isset($r['images']['pdf_cover_image'])) {
                         $report['images']['pdf_cover_image'] = $r['images']['pdf_cover_image'];
                     }
+
                     $report['created_at'] = $r['created_at'];
                     $data['reports'][$index] = $report;
                     $updated = true;
                     break;
                 }
             }
+
             if (!$updated) {
-                return array('success' => false, 'message' => 'Report not found');
+                return array('success' => false, 'message' => 'Configuration not found');
             }
         } else {
             // Create a new report setting
@@ -212,8 +216,8 @@ class ReportSettingService
             $data['reports'][] = $report;
         }
 
-        // Write to file
         $json = json_encode($data, JSON_PRETTY_PRINT);
+
         if (file_put_contents($this->settingsFile, $json) !== false) {
             return array(
                 'success' => true,
@@ -243,8 +247,8 @@ class ReportSettingService
             return array('success' => false, 'message' => 'Configuration not found');
         }
 
-        // Find and remove the report with matching ID using simple loop
         $found = false;
+
         for ($i = 0; $i < count($data['reports']); $i++) {
             if (isset($data['reports'][$i]['id']) && $data['reports'][$i]['id'] == $id) {
                 array_splice($data['reports'], $i, 1);
@@ -257,7 +261,7 @@ class ReportSettingService
             return array('success' => false, 'message' => 'Configuration not found');
         }
 
-        // Write updated data back to file
+        // Write updated data back to the file
         $json = json_encode($data, JSON_PRETTY_PRINT);
         $result = file_put_contents($this->settingsFile, $json);
 
@@ -266,29 +270,5 @@ class ReportSettingService
         }
 
         return array('success' => false, 'message' => 'Failed to write file');
-    }
-
-    /**
-     * Handle manual PDF upload with a new naming convention
-     * Filename format: {sanitized_report_name}.pdf
-     *
-     * @param array $file Uploaded file data from $_FILES
-     * @param string $fileName Base file name for the report (already sanitized)
-     * @return string|null Generated filename or null on failure
-     */
-    private function handleManualPdfUpload($file, $fileName)
-    {
-        if ($file['error'] != 0) {
-            return null;
-        }
-
-        // Filename is already sanitized, just add .pdf extension
-        $filename = $fileName . '.pdf';
-
-        if (move_uploaded_file($file['tmp_name'], $this->reportsPath . '/' . $filename)) {
-            return $filename;
-        }
-
-        return null;
     }
 }

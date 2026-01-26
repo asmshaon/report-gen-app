@@ -6,21 +6,6 @@ require_once __DIR__ . '/common.php';
 // Include required services
 require_once __DIR__ . '/../services/ReportGeneratorService.php';
 
-// Ensure reports and images directories exist
-$reportsDir = __DIR__ . '/../../reports';
-$imagesDir = __DIR__ . '/../../images';
-$logsDir = __DIR__ . '/../../logs';
-
-if (!is_dir($reportsDir)) {
-    mkdir($reportsDir, 0755, true);
-}
-if (!is_dir($imagesDir)) {
-    mkdir($imagesDir, 0755, true);
-}
-if (!is_dir($logsDir)) {
-    mkdir($logsDir, 0755, true);
-}
-
 // Get form data
 global $GENERATE_FIELDS;
 $input = getFormInput($GENERATE_FIELDS);
@@ -31,16 +16,19 @@ if (!$validation['valid']) {
     sendError('Missing required fields: ' . implode(', ', $validation['missing']));
 }
 
+// Initialize the generator (ensures directories exist)
+$generator = new ReportGeneratorService();
+
 // Sanitize file name
 $sanitizedFileName = sanitizeFilename($input['file_name']);
 $input['file_name'] = $sanitizedFileName;
 
 // Handle image uploads with naming convention
 $articleImage = isset($_FILES['article_image']) && $_FILES['article_image']['error'] !== UPLOAD_ERR_NO_FILE
-    ? handleImageUpload($_FILES['article_image'], $imagesDir, $sanitizedFileName, 'article')
+    ? handleImageUpload($_FILES['article_image'], $generator->imagesPath, $sanitizedFileName, 'article')
     : null;
 $pdfCoverImage = isset($_FILES['pdf_cover']) && $_FILES['pdf_cover']['error'] !== UPLOAD_ERR_NO_FILE
-    ? handleImageUpload($_FILES['pdf_cover'], $imagesDir, $sanitizedFileName, 'cover')
+    ? handleImageUpload($_FILES['pdf_cover'], $generator->imagesPath, $sanitizedFileName, 'cover')
     : null;
 
 // Use existing images if no new upload (and match the current report name)
@@ -87,9 +75,6 @@ $config = array(
 );
 
 $reportType = isset($input['report_type']) ? $input['report_type'] : 'html';
-
-// Initialize the generator
-$generator = new ReportGeneratorService();
 
 // Generate report based on type
 $result = array();

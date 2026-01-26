@@ -11,27 +11,27 @@ class ReportGeneratorService
     /**
      * @var string Path to data directory
      */
-    private $dataPath;
+    public $dataPath;
 
     /**
      * @var string Path to reports directory
      */
-    private $reportsPath;
+    public $reportsPath;
 
     /**
      * @var string Path to images directory
      */
-    private $imagesPath;
+    public $imagesPath;
 
     /**
      * @var string Path to logs directory
      */
-    private $logsPath;
+    public $logsPath;
 
     /**
      * @var array CSV data cache
      */
-    private $csvData = array();
+    public $csvData = array();
 
     /**
      * ReportGeneratorService constructor
@@ -47,6 +47,11 @@ class ReportGeneratorService
         if (!is_dir($this->reportsPath)) {
             mkdir($this->reportsPath, 0755, true);
         }
+
+        if (!is_dir($this->imagesPath)) {
+            mkdir($this->imagesPath, 0755, true);
+        }
+
         if (!is_dir($this->logsPath)) {
             mkdir($this->logsPath, 0755, true);
         }
@@ -93,7 +98,7 @@ class ReportGeneratorService
         // Add stock blocks using form template
         $stockBlockTemplate = !empty($config['content_templates']['stock_block_html'])
             ? $config['content_templates']['stock_block_html']
-            : $this->getDefaultStockBlockTemplate();
+            : '';
 
         foreach ($stocks['data'] as $stock) {
             $stockHtml = $this->replaceShortcodes(
@@ -115,12 +120,12 @@ class ReportGeneratorService
 
         // Write to file
         $outputFile = $this->getReportPath($config['file_name'] . '.html');
+
         if (file_put_contents($outputFile, $html) !== false) {
             return array(
                 'success' => true,
                 'message' => 'HTML report generated successfully',
                 'file' => $config['file_name'] . '.html',
-                'path' => $outputFile
             );
         }
 
@@ -131,7 +136,7 @@ class ReportGeneratorService
     }
 
     /**
-     * Generate PDF report from configuration
+     * Generate a PDF report from configuration
      *
      * @param array $config Report configuration
      * @return array Result with success status and message
@@ -158,7 +163,6 @@ class ReportGeneratorService
                 'success' => true,
                 'message' => 'PDF report generated successfully',
                 'file' => $config['file_name'] . '.pdf',
-                'path' => $pdfFile
             );
         }
 
@@ -182,14 +186,14 @@ class ReportGeneratorService
         // Build flipbook HTML
         $html = $this->buildFlipbookHtml($config, $stocks['data']);
 
-        // Write to file
+        // Write to a file
         $flipbookFile = $this->getReportPath($config['file_name'] . '_flipbook.html');
+
         if (file_put_contents($flipbookFile, $html) !== false) {
             return array(
                 'success' => true,
                 'message' => 'Flipbook report generated successfully',
                 'file' => $config['file_name'] . '_flipbook.html',
-                'path' => $flipbookFile
             );
         }
 
@@ -265,10 +269,10 @@ class ReportGeneratorService
     }
 
     /**
-     * Get full path for a report file
+     * Get the full path for a report file
      *
      * @param string $filename Report filename
-     * @return string Full path to report file
+     * @return string Full path to a report file
      */
     private function getReportPath($filename)
     {
@@ -325,7 +329,7 @@ class ReportGeneratorService
     }
 
     /**
-     * Replace shortcodes in template with actual values
+     * Replace shortcodes in the template with actual values
      *
      * @param string $template Template with shortcodes
      * @param array|null $stock Stock data (null for general templates)
@@ -362,25 +366,6 @@ class ReportGeneratorService
     }
 
     /**
-     * Get default stock block template
-     *
-     * @return string Default template
-     */
-    private function getDefaultStockBlockTemplate()
-    {
-        return '<br><div class="stock-container pagebreak">
-    <div style="" class="order-md-1">
-        <h2 class="mt-1">[Company] ([Exchange]:[Ticker])</h2>
-        [Chart]<br>
-        <strong>Stock Price: </strong>$[Price]<br>
-        <strong>Market Cap</strong>: $[Market Cap]<br>
-        <strong>Consensus Price Target: </strong>$[Target Price]
-    </div>
-    <div class="w-100 mt-2 order-md-3">[Description]</div>
-</div>';
-    }
-
-    /**
      * Generate TradingView widget HTML using iframe
      *
      * @param string $ticker Stock ticker symbol
@@ -388,7 +373,6 @@ class ReportGeneratorService
      */
     private function generateTradingViewWidget($ticker)
     {
-        // Build the widget config - use the exact format from dummy report
         $widgetConfig = array(
             'symbol' => $ticker,
             'width' => '600',
@@ -493,7 +477,7 @@ class ReportGeneratorService
         // Add stock blocks using form template
         $stockBlockTemplate = !empty($config['content_templates']['stock_block_html'])
             ? $config['content_templates']['stock_block_html']
-            : $this->getDefaultStockBlockTemplate();
+            : '';
 
         foreach ($stocks as $stock) {
             $stockHtml = $this->replaceShortcodes(
@@ -626,39 +610,25 @@ class ReportGeneratorService
 			</div>';
         }
 
-        // Stock pages
+        // Stock pages - use stock_block_html template like HTML and PDF reports
+        $stockBlockTemplate = !empty($config['content_templates']['stock_block_html'])
+            ? $config['content_templates']['stock_block_html']
+            : '';
+
         $stockNum = 1;
         foreach ($stocks as $stock) {
-            $company = isset($stock['Company']) ? htmlspecialchars($stock['Company']) : '';
-            $ticker = isset($stock['Ticker']) ? htmlspecialchars($stock['Ticker']) : '';
-            $price = isset($stock['Price']) ? htmlspecialchars($stock['Price']) : '';
-            $targetPrice = isset($stock['Target Price']) ? htmlspecialchars($stock['Target Price']) : (isset($stock['Price']) ? htmlspecialchars($stock['Price']) : '');
-            $exchange = isset($stock['Exchange']) ? htmlspecialchars($stock['Exchange']) : '';
-            $marketCap = isset($stock['Market Cap']) ? htmlspecialchars($stock['Market Cap']) : '';
-            $description = isset($stock['Description']) ? $stock['Description'] : '';
+            $stock['Stock Number'] = $stockNum;
 
-            // Generate TradingView widget
-            $chartWidget = $this->generateTradingViewWidget($ticker);
+            // Replace shortcodes in the template
+            $stockHtml = $this->replaceShortcodes(
+                $stockBlockTemplate,
+                $stock,
+                $config
+            );
 
-            $pages .= '<div class="page pagebreak">
-	<div class="stock-container">
-        <div class="stock-container-2">
-            <div style="" class="order-md-1">
-                <h2 class="mt-1">' . $stockNum . ') ' . $company . ' (<a target="_blank" href="https://trendadvisor.net/go/stocks/' . $exchange . '/' . $ticker . '/">' . $exchange . ':' . $ticker . '</a>)</h2>
-                ' . $chartWidget . '
-                <br>
-                <strong>Closing Price: </strong>$' . $price . '
-                <br>
-		        <strong>Dividend Yield: </strong>
-		        <br>
-		        <strong>Market Cap</strong>: $' . $marketCap . '
-		        <br>
-		        <strong>Consensus Price Target: </strong>$' . $targetPrice . '
-            </div>
-            <div class="w-100 mt-2 order-md-3 stock-description-2">' . $description . '</div>
-        </div>
-    </div>
-</div>';
+            // Wrap in page div
+            $pages .= '<div class="page">' . $stockHtml . '</div>';
+
             $stockNum++;
         }
 
@@ -776,7 +746,6 @@ class ReportGeneratorService
      */
     private function convertHtmlToPdfWithMpdf($html, $pdfFile)
     {
-        // Load mPDF only when needed
         require_once __DIR__ . '/../../lib/mpdf/mpdf.php';
 
         try {
@@ -789,10 +758,10 @@ class ReportGeneratorService
             // Write HTML to mPDF
             $mpdf->WriteHTML($html);
 
-            // Output the PDF to file (destination 'F' = save to local file)
+            // Output the PDF to file
             $mpdf->Output($pdfFile, 'F');
 
-            // Check if file was created
+            // Check if a file was created
             if (file_exists($pdfFile)) {
                 return array('success' => true);
             }

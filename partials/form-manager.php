@@ -51,7 +51,7 @@
             </div>
 
             <h6 class="section-header mt-4">Report Content (HTML Templates)</h6>
-            <p class="small text-muted">Use [Company], [Ticker], [Exchange], [Price], [Chart], [Target Price] and [Current Date] as shortcodes.</p>
+            <p class="small text-muted">Use [Company], [Description], [Ticker], [Exchange], [Price], [Chart], [Target Price] and [Current Date] as shortcodes.</p>
 
             <div class="form-group">
                 <label>Report Intro HTML</label>
