@@ -70,7 +70,7 @@ class ReportGeneratorService
         $html = '<div id="article-body">' . "\n\n";
 
         // Add main article wrapper
-        $html .= '<div class="mainarticle" style="width: 100%"><div><title></title>';
+        $html .= '<div class="mainarticle" style="width: 100%"><div><title>' . $config['title'] . '</title>';
 
         // Add article image if exists
         if (!empty($config['images']['article_image'])) {
@@ -101,13 +101,13 @@ class ReportGeneratorService
                 $stock,
                 $config
             );
-            $html .= $stockHtml . "\n";
+            $html .= $stockHtml . "<br>";
         }
 
         // Add disclaimer from form template
         if (!empty($config['content_templates']['disclaimer_html'])) {
             $disclaimerHtml = $config['content_templates']['disclaimer_html'];
-            $html .= "\n" . $disclaimerHtml . "\n";
+            $html .= $disclaimerHtml;
         }
 
         // Close article-body

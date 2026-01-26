@@ -190,7 +190,9 @@ function sanitizeFilename($filename)
     // Convert to lowercase
     $filename = strtolower($filename);
 
-    // Replace spaces and special chars with underscores
+    // Replace spaces with underscores
+    $filename = str_replace(' ', '_', $filename);
+
     // Keep only letters, numbers, and underscores
     $filename = preg_replace('/[^a-z0-9]+/', '_', $filename);
 
