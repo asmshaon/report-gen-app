@@ -1,29 +1,20 @@
 <?php
 
-date_default_timezone_set('UTC');
+// Include common utilities
+require_once __DIR__ . '/common.php';
 
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET');
+// Include the service
+require_once __DIR__ . '/../services/ReportSettingService.php';
 
-$filePath = __DIR__ . '/../../db/report_settings.json';
+// Initialize the service
+$service = new ReportSettingService();
 
-if (!file_exists($filePath)) {
-    http_response_code(404);
-    echo json_encode(array('success' => false, 'message' => 'Settings file not found', 'data' => array()));
-    exit;
+// Get all configurations
+$result = $service->getConfigurations();
+
+// Send response
+if ($result['success']) {
+    sendSuccess(null, $result['data']);
+} else {
+    sendError($result['message'], 500, $result['data']);
 }
-
-$content = file_get_contents($filePath);
-$data = json_decode($content, true);
-
-if ($data === null) {
-    http_response_code(500);
-    echo json_encode(array('success' => false, 'message' => 'Invalid JSON format', 'data' => array()));
-    exit;
-}
-
-echo json_encode(array(
-    'success' => true,
-    'data' => isset($data['reports']) ? $data['reports'] : array()
-));

@@ -4,7 +4,6 @@
  * ReportGeneratorService - Service for generating HTML, PDF, and Flipbook reports
  */
 
-// Load mPDF library (version 6.1.4 - compatible with PHP 5.5)
 require_once __DIR__ . '/../../lib/mpdf/mpdf.php';
 
 class ReportGeneratorService
@@ -34,7 +33,7 @@ class ReportGeneratorService
      */
     public function __construct()
     {
-        $this->dataPath = __DIR__ . '/../../original_files';
+        $this->dataPath = __DIR__ . '/../../db';
         $this->reportsPath = __DIR__ . '/../../reports';
         $this->imagesPath = __DIR__ . '/../../images';
     }
@@ -68,6 +67,9 @@ class ReportGeneratorService
 
         // Add mainarticle wrapper
         $html .= '<div class="mainarticle" style="width: 100%"><div><title></title>';
+
+        // Debug log
+        file_put_contents(__DIR__ . '/../../logs/debug.log', date('Y-m-d H:i:s') . " HTML gen - images: " . json_encode($config['images']) . "\n", FILE_APPEND);
 
         // Add article image if exists
         if (!empty($config['images']['article_image'])) {
@@ -151,10 +153,10 @@ class ReportGeneratorService
 
         $stocks = $this->parseCsv($csvFile, $config['number_of_stocks']);
 
-        // Build complete HTML document for PDF
+        // Build a complete HTML document for PDF
         $html = $this->buildPdfHtml($config, $stocks);
 
-        // Output PDF file path - use absolute path
+        // Output PDF file path - use an absolute path
         $pdfFile = $this->reportsPath . '/' . $config['file_name'] . '.pdf';
 
         // Generate PDF using mPDF
@@ -199,18 +201,13 @@ class ReportGeneratorService
         // Build flipbook HTML
         $html = $this->buildFlipbookHtml($config, $stocks);
 
-        // Write to file - create flipbook directory
-        $flipbookDir = $this->reportsPath . '/' . $config['file_name'];
-        if (!is_dir($flipbookDir)) {
-            mkdir($flipbookDir, 0755, true);
-        }
-
-        $flipbookFile = $flipbookDir . '/index.html';
+        // Write to file - save as single HTML file in reports directory
+        $flipbookFile = $this->reportsPath . '/' . $config['file_name'] . 'Flipbook.html';
         if (file_put_contents($flipbookFile, $html) !== false) {
             return array(
                 'success' => true,
                 'message' => 'Flipbook report generated successfully',
-                'file' => $config['file_name'] . '/index.html',
+                'file' => $config['file_name'] . 'Flipbook.html',
                 'path' => $flipbookFile
             );
         }
@@ -339,16 +336,14 @@ class ReportGeneratorService
             // TradingView chart widget - use the ticker symbol
             $ticker = isset($stock['Ticker']) ? $stock['Ticker'] : '';
             $replacements['[Chart]'] = $this->generateTradingViewWidget($ticker);
+            $replacements['[Target Price]'] = isset($stock['Target Price']) ? $stock['Target Price'] : (isset($stock['Price']) ? $stock['Price'] : '');
         }
 
-        // Perform replacement - sort by key length (longest first) to avoid partial replacements
         uksort($replacements, function($a, $b) {
             return strlen($b) - strlen($a);
         });
 
-        $result = str_replace(array_keys($replacements), array_values($replacements), $template);
-
-        return $result;
+        return str_replace(array_keys($replacements), array_values($replacements), $template);
     }
 
     /**
@@ -360,7 +355,7 @@ class ReportGeneratorService
     {
         return '<br><div class="stock-container pagebreak">
     <div style="" class="order-md-1">
-        <h2 class="mt-1">[Company] ([Exchage]:[Ticker])</h2>
+        <h2 class="mt-1">[Company] ([Exchange]:[Ticker])</h2>
         [Chart]<br>
         <strong>Stock Price: </strong>$[Price]<br>
         <strong>Market Cap</strong>: $[Market Cap]<br>
@@ -371,7 +366,7 @@ class ReportGeneratorService
     }
 
     /**
-     * Generate TradingView widget HTML using iframe (matches dummy report format)
+     * Generate TradingView widget HTML using iframe
      *
      * @param string $ticker Stock ticker symbol
      * @return string TradingView widget HTML
@@ -455,29 +450,27 @@ class ReportGeneratorService
     {
         $title = isset($config['title']) ? htmlspecialchars($config['title']) : 'Stock Report';
 
-        // Build the article body content (same as HTML report)
-        $articleBody = '<div id="article-body">' . "\n\n";
-        $articleBody .= '<div class="mainarticle" style="width: 100%"><div>';
+        // Build the article body content (same as an HTML report)
+        $articleBody = '<h1>' . $title . '</h1>';
+        $articleBody .= '<div id="article-body">' . "\n\n";
 
-        // Add article image if exists - embed as base64 for mPDF
+        // Add article image and intro content - use same structure as HTML report
+        $articleBody .= '<div class="mainarticle" style="width: 100%; line-height: 1.6;">';
+
+        // Add article image if exists - wrap in p tag with inline float style like HTML report
         if (!empty($config['images']['article_image'])) {
-            $imagePath = $this->imagesPath . '/' . $config['images']['article_image'];
-            if (file_exists($imagePath)) {
-                $imageData = $this->getImageAsBase64($imagePath);
-                if ($imageData) {
-                    $articleBody .= '<p><img alt="" src="' . $imageData . '" style="float: left; width: 200px; height: 200px; margin: 14px;" /></p>' . "\n\n";
-                }
-            }
+            $imagePath = '../../images/' . $config['images']['article_image'];
+            $articleBody .= '<p><img alt="" src="' . $imagePath . '" style="float: left; width: 200px; height: 200px; margin: 0 20px 10px 0;"></p>' . "\n\n";
         }
 
-        // Add intro content from form template
+        // Add intro content from form template directly
         if (!empty($config['content_templates']['intro_html'])) {
             $introHtml = $this->replaceShortcodes(
                 $config['content_templates']['intro_html'],
                 null,
                 $config
             );
-            $articleBody .= $introHtml . "\n";
+            $articleBody .= $introHtml;
         }
 
         $articleBody .= '</div><br>';
@@ -493,17 +486,11 @@ class ReportGeneratorService
                 $stock,
                 $config
             );
-            // Remove TradingView widgets from PDF (they don't work in mPDF)
-            $stockHtml = preg_replace('/<!-- TradingView Widget BEGIN.*?TradingView Widget END -->/s', '<p><em>[Interactive chart available in HTML version]</em></p>', $stockHtml);
+            $stockHtml = preg_replace('/<!-- TradingView Widget BEGIN.*?TradingView Widget END -->/s', '', $stockHtml);
             $articleBody .= $stockHtml . "\n";
         }
 
-        // Add disclaimer from form template
-        if (!empty($config['content_templates']['disclaimer_html'])) {
-            $disclaimerHtml = $config['content_templates']['disclaimer_html'];
-            $articleBody .= "\n" . $disclaimerHtml . "\n";
-        }
-
+        // No disclaimer in PDF
         $articleBody .= '</div>';
 
         // Build complete HTML document with proper styling for PDF
@@ -515,24 +502,34 @@ class ReportGeneratorService
     <style>
         body {
             font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-            line-height: 1.6;
             color: #333;
             margin: 0;
-            padding: 20px;
             font-size: 12px;
+        }
+        .cover-page {
+            page-break-after: always;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100vh;
+        }
+        .cover-page img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
         }
         .mainarticle {
             width: 100%;
         }
         .stock-container {
             page-break-inside: avoid;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
             padding: 15px;
             border: 1px solid #ddd;
         }
         .stock-container h2 {
             margin-top: 0;
-            color: #007bff;
             font-size: 16px;
         }
         .w-100 {
@@ -542,15 +539,17 @@ class ReportGeneratorService
         .order-md-1, .order-md-3 {
             width: 100%;
         }
-        .termsblk {
-            margin-top: 30px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-left: 4px solid #dc3545;
-            font-size: 10px;
-        }
         strong {
             font-weight: bold;
+        }
+        .intro-image {
+            float: left;
+            height: 200px;
+            width: auto;
+            margin: 0 20px 10px 0;
+        }
+        .intro-content {
+            line-height: 1.6;
         }
         img {
             float: left;
@@ -558,14 +557,23 @@ class ReportGeneratorService
             height: 150px;
             margin: 10px;
         }
-        /* Page break for stocks */
-        .pagebreak {
-            page-break-after: always;
-        }
     </style>
 </head>
-<body>
-' . $articleBody . '
+<body>';
+
+        // Add cover page with PDF cover image (full page) - use relative path for mPDF
+        if (!empty($config['images']['pdf_cover_image'])) {
+            $imagePath = __DIR__ . '/../../images/' . $config['images']['pdf_cover_image'];
+            if (file_exists($imagePath)) {
+                // mPDF needs path relative to the script that calls it (app/api/)
+                $relativePath = '../../images/' . $config['images']['pdf_cover_image'];
+                $html .= '<div style="height: 800px;width: 100%; text-align: center;page-break-after: always">
+                    <img src="' . $relativePath . '" alt="Cover" style="width: 100%; height: 100%; object-fit: contain;" />
+                </div>';
+            }
+        }
+
+        $html .= $articleBody . '
 </body>
 </html>';
 
@@ -589,11 +597,6 @@ class ReportGeneratorService
         // Cover page - use PDF cover image if available
         if (!empty($config['images']['pdf_cover_image'])) {
             $imagePath = '../images/' . $config['images']['pdf_cover_image'];
-            $pages .= '<div class="page">
-				<img src="' . $imagePath . '" draggable="false" alt="" height="100%" width="100%" />
-			</div>';
-        } elseif (!empty($config['images']['article_image'])) {
-            $imagePath = '../images/' . $config['images']['article_image'];
             $pages .= '<div class="page">
 				<img src="' . $imagePath . '" draggable="false" alt="" height="100%" width="100%" />
 			</div>';
@@ -629,6 +632,8 @@ class ReportGeneratorService
             $company = isset($stock['Company']) ? htmlspecialchars($stock['Company']) : '';
             $ticker = isset($stock['Ticker']) ? htmlspecialchars($stock['Ticker']) : '';
             $price = isset($stock['Price']) ? htmlspecialchars($stock['Price']) : '';
+            $targetPrice = isset($stock['Target Price']) ? htmlspecialchars($stock['Target Price']) : (isset($stock['Price']) ? htmlspecialchars($stock['Price']) : '');
+            $exchange = isset($stock['Exchange']) ? htmlspecialchars($stock['Exchange']) : '';
             $marketCap = isset($stock['Market Cap']) ? htmlspecialchars($stock['Market Cap']) : '';
             $description = isset($stock['Description']) ? $stock['Description'] : '';
 
@@ -639,7 +644,7 @@ class ReportGeneratorService
 	<div class="stock-container">
         <div class="stock-container-2">
             <div style="" class="order-md-1">
-                <h2 class="mt-1">' . $stockNum . ') ' . $company . ' (<a target="_blank" href="https://trendadvisor.net/go/stocks/NASDAQ/' . $ticker . '/">NASDAQ:' . $ticker . '</a>)</h2>
+                <h2 class="mt-1">' . $stockNum . ') ' . $company . ' (<a target="_blank" href="https://trendadvisor.net/go/stocks/' . $exchange . '/' . $ticker . '/">' . $exchange . ':' . $ticker . '</a>)</h2>
                 ' . $chartWidget . '
                 <br>
                 <strong>Closing Price: </strong>$' . $price . '
@@ -648,7 +653,7 @@ class ReportGeneratorService
 		        <br>
 		        <strong>Market Cap</strong>: $' . $marketCap . '
 		        <br>
-		        <strong>Consensus Price Target: </strong>$N/A
+		        <strong>Consensus Price Target: </strong>$' . $targetPrice . '
             </div>
             <div class="w-100 mt-2 order-md-3 stock-description-2">' . $description . '</div>
         </div>

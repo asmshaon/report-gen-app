@@ -294,11 +294,11 @@ function reportGenerator() {
                 const fileName = form.querySelector('[name="file_name"]').value;
                 const stockCount = form.querySelector('[name="stock_count"]').value;
 
-                if (!fileName) {
-                    throw new Error('Report File Name is required');
-                }
-                if (!stockCount) {
-                    throw new Error('Number of Stocks is required');
+                if (!fileName || !stockCount) {
+                    this.resultMessage = 'Please fill all required fields to generate reports.';
+                    this.resultSuccess = false;
+                    this.generating = false;
+                    return;
                 }
 
                 // Collect form data
@@ -313,10 +313,34 @@ function reportGenerator() {
                 const result = await response.json();
 
                 if (result.success) {
-                    let message = result.message;
-                    if (result.file) {
-                        message += '. <a href="reports/' + result.file + '" target="_blank" class="alert-link">View Report</a>';
+                    let message = result.message || 'Report generated successfully';
+                    const data = result.data || {};
+
+                    // Handle a single file (html, pdf, flipbook)
+                    if (data.file) {
+                        message += '. <a href="reports/' + data.file + '" target="_blank" class="alert-link">View ' + data.type.toUpperCase() + ' Report</a>';
+                    } else if (data.html || data.pdf || data.flipbook) {
+                        // Multiple files generated (report type: all)
+                        const links = [];
+                        if (data.html) {
+                            links.push('<a href="reports/' + data.html + '" target="_blank" class="alert-link">HTML</a>');
+                        }
+                        if (data.pdf) {
+                            links.push('<a href="reports/' + data.pdf + '" target="_blank" class="alert-link">PDF</a>');
+                        }
+                        if (data.flipbook) {
+                            links.push('<a href="reports/' + data.flipbook + '" target="_blank" class="alert-link">Flipbook</a>');
+                        }
+                        if (links.length > 0) {
+                            message += '. View: ' + links.join(' | ');
+                        }
+
+                        // Show any failed reports
+                        if (data.failed && Object.keys(data.failed).length > 0) {
+                            message += '<br><small class="text-muted">Failed: ' + Object.keys(data.failed).join(', ').toUpperCase() + '</small>';
+                        }
                     }
+
                     this.resultMessage = message;
                     this.resultSuccess = true;
                 } else {
@@ -329,10 +353,10 @@ function reportGenerator() {
                 this.resultSuccess = false;
             } finally {
                 this.generating = false;
-                // Auto-hide message after 5 seconds
+                // Auto-hide message after delay
                 setTimeout(function() {
                     this.resultMessage = '';
-                }.bind(this), 5000);
+                }.bind(this), !this.resultSuccess ? 5000 : 10000);
             }
         }
     };
@@ -374,7 +398,6 @@ function manualPdfUploader() {
                     this.uploadSuccess = result.message;
                     this.fileName = '';
                     fileInput.value = '';
-                    // Auto-hide success message after 5 seconds
                     setTimeout(function() {
                         this.uploadSuccess = '';
                     }.bind(this), 5000);

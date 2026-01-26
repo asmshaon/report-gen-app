@@ -32,7 +32,7 @@
                     </tr>
                 </template>
                 <tr x-show="configurations.length === 0">
-                    <td colspan="4" class="text-center text-muted p-4">No configurations found. Create one above.</td>
+                    <td colspan="4" class="text-center text-muted p-4">No configurations found.</td>
                 </tr>
                 </tbody>
             </table>
