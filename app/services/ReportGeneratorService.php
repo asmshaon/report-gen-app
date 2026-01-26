@@ -67,7 +67,7 @@ class ReportGeneratorService
         }
 
         // Start building HTML - use article-body wrapper
-        $html = '<div id="article-body">' . "\n\n";
+        $html = '<div id="article-body">';
 
         // Add main article wrapper
         $html .= '<div class="mainarticle" style="width: 100%"><div><title>' . $config['title'] . '</title>';
@@ -75,7 +75,7 @@ class ReportGeneratorService
         // Add article image if exists
         if (!empty($config['images']['article_image'])) {
             $imagePath = '../images/' . $config['images']['article_image'];
-            $html .= '<p><img alt="" src="' . $imagePath . '" style="float: left; width: 200px; height: 200px; margin: 14px;"></p>' . "\n\n";
+            $html .= '<p><img alt="" src="' . $imagePath . '" style="float: left; width: 200px; height: 200px; margin: 14px;"></p>';
         }
 
         // Add intro content from the form template
@@ -85,7 +85,7 @@ class ReportGeneratorService
                 null,
                 $config
             );
-            $html .= $introHtml . "\n";
+            $html .= $introHtml;
         }
 
         $html .= '</div><br>';
@@ -467,15 +467,15 @@ class ReportGeneratorService
 
         // Build the article body content (same as an HTML report)
         $articleBody = '<h1>' . $title . '</h1>';
-        $articleBody .= '<div id="article-body">' . "\n\n";
+        $articleBody .= '<div id="article-body">';
 
-        // Add article image and intro content - use same structure as HTML report
+        // Add article image and intro content - use same structure as an HTML report
         $articleBody .= '<div class="mainarticle" style="width: 100%; line-height: 1.6;">';
 
-        // Add article image if exists - wrap in p tag with inline float style like HTML report
+        // Add article image if exists - wrap in p tag with inline float style like an HTML report
         if (!empty($config['images']['article_image'])) {
             $imagePath = '../../images/' . $config['images']['article_image'];
-            $articleBody .= '<p><img alt="" src="' . $imagePath . '" style="float: left; width: 200px; height: 200px; margin: 0 20px 10px 0;"></p>' . "\n\n";
+            $articleBody .= '<p><img alt="" src="' . $imagePath . '" style="float: left; width: 200px; height: 200px; margin: 0 20px 10px 0;"></p>';
         }
 
         // Add intro content from form template directly
@@ -502,13 +502,13 @@ class ReportGeneratorService
                 $config
             );
             $stockHtml = preg_replace('/<!-- TradingView Widget BEGIN.*?TradingView Widget END -->/s', '', $stockHtml);
-            $articleBody .= $stockHtml . "\n";
+            $articleBody .= $stockHtml;
         }
 
         // No disclaimer in PDF
         $articleBody .= '</div>';
 
-        // Build complete HTML document with proper styling for PDF
+        // Build a complete HTML document with proper styling for PDF
         $html = '<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -663,7 +663,7 @@ class ReportGeneratorService
         }
 
         // Build complete flipbook HTML
-        $html = '<!DOCTYPE html>
+        return '<!DOCTYPE html>
 		<html>
 		<head>
 		  	<title>' . $title . '</title>
@@ -695,8 +695,6 @@ class ReportGeneratorService
 		    });
 
 		    function loadApp() {
-		      console.log("Load App");
-
 		      var size = getSize();
 
 		      // Create the flipbook
@@ -767,8 +765,6 @@ class ReportGeneratorService
 		</script>
 	</body>
 	</html>';
-
-        return $html;
     }
 
     /**
