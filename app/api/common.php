@@ -25,6 +25,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+global $CONFIG_FIELDS;
+$CONFIG_FIELDS = array(
+    'id', 'file_name', 'report_title', 'author_name', 'stock_count',
+    'data_source', 'report_intro_html', 'stock_block_html', 'disclaimer_html'
+);
+
+global $GENERATE_FIELDS;
+$GENERATE_FIELDS = array(
+    'file_name', 'report_title', 'author_name', 'stock_count',
+    'data_source', 'report_intro_html', 'stock_block_html', 'disclaimer_html',
+    'article_image_existing', 'pdf_cover_existing', 'report_type'
+);
+
+
 /**
  * Send a JSON response
  *
@@ -192,7 +206,7 @@ function sanitizeFilename($filename)
 }
 
 /**
- * Build image filename from report name and type
+ * Build image filename from the report name and type
  * Example: "My Report" + "article" → "my_report_article.jpg"
  *
  * @param string $reportName Report file name
@@ -203,18 +217,55 @@ function sanitizeFilename($filename)
 function buildImageFilename($reportName, $type, $extension)
 {
     $sanitized = sanitizeFilename($reportName);
+
     return $sanitized . '_' . $type . '.' . $extension;
 }
 
-global $CONFIG_FIELDS;
-$CONFIG_FIELDS = array(
-    'id', 'file_name', 'report_title', 'author_name', 'stock_count',
-    'data_source', 'report_intro_html', 'stock_block_html', 'disclaimer_html'
-);
+/**
+ * Handle image upload with naming convention
+ * Filename format: {sanitized_report_name}_{type}.{ext}
+ *
+ * @param array $file Uploaded file data from $_FILES
+ * @param string $targetDir Target directory path
+ * @param string $reportName Report file name (will be sanitized)
+ * @param string $type Image type (article or cover)
+ * @return string|null Generated filename or null on failure
+ */
+function handleImageUpload($file, $targetDir, $reportName, $type)
+{
+    // Check for upload errors
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        return null;
+    }
 
-global $GENERATE_FIELDS;
-$GENERATE_FIELDS = array(
-    'file_name', 'report_title', 'author_name', 'stock_count',
-    'data_source', 'report_intro_html', 'stock_block_html', 'disclaimer_html',
-    'article_image_existing', 'pdf_cover_existing', 'report_type'
-);
+    // Validate file size (max 2MB)
+    $maxSize = 2 * 1024 * 1024;
+    if ($file['size'] > $maxSize) {
+        return null;
+    }
+
+    // Validate file type
+    $allowedTypes = array('image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp');
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mimeType = finfo_file($finfo, $file['tmp_name']);
+    finfo_close($finfo);
+
+    if (!in_array($mimeType, $allowedTypes)) {
+        return null;
+    }
+
+    // Get extension
+    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+
+    // Build filename: {report_name}_{type}.{ext}
+    $filename = buildImageFilename($reportName, $type, $extension);
+    $targetPath = $targetDir . '/' . $filename;
+
+    // Move the uploaded file (will overwrite if exists)
+    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+        return $filename;
+    }
+
+    return null;
+}
+

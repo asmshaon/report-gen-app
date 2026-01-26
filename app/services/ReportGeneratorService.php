@@ -69,11 +69,8 @@ class ReportGeneratorService
         // Start building HTML - use article-body wrapper
         $html = '<div id="article-body">' . "\n\n";
 
-        // Add mainarticle wrapper
+        // Add main article wrapper
         $html .= '<div class="mainarticle" style="width: 100%"><div><title></title>';
-
-        // Debug log
-        file_put_contents($this->logsPath . '/debug.log', date('Y-m-d H:i:s') . " HTML gen - images: " . json_encode($config['images']) . "\n", FILE_APPEND);
 
         // Add article image if exists
         if (!empty($config['images']['article_image'])) {
@@ -81,7 +78,7 @@ class ReportGeneratorService
             $html .= '<p><img alt="" src="' . $imagePath . '" style="float: left; width: 200px; height: 200px; margin: 14px;"></p>' . "\n\n";
         }
 
-        // Add intro content from form template
+        // Add intro content from the form template
         if (!empty($config['content_templates']['intro_html'])) {
             $introHtml = $this->replaceShortcodes(
                 $config['content_templates']['intro_html'],

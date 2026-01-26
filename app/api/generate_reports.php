@@ -21,61 +21,6 @@ if (!is_dir($logsDir)) {
     mkdir($logsDir, 0755, true);
 }
 
-/**
- * Handle image upload with new naming convention
- * Filename format: {sanitized_report_name}_{type}.{ext}
- */
-function handleImageUpload($fileInput, $reportName, $type)
-{
-    global $imagesDir;
-
-    if (!isset($_FILES[$fileInput]) || $_FILES[$fileInput]['error'] === UPLOAD_ERR_NO_FILE) {
-        return null;
-    }
-
-    $file = $_FILES[$fileInput];
-
-    // Check for upload errors
-    if ($file['error'] !== UPLOAD_ERR_OK) {
-        logDebug("Upload error for $fileInput: " . $file['error']);
-        return null;
-    }
-
-    // Validate file size (max 2MB)
-    $maxSize = 2 * 1024 * 1024;
-    if ($file['size'] > $maxSize) {
-        logDebug("File too large for $fileInput: " . $file['size']);
-        return null;
-    }
-
-    // Validate file type
-    $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    $mimeType = finfo_file($finfo, $file['tmp_name']);
-    finfo_close($finfo);
-
-    if (!in_array($mimeType, $allowedTypes)) {
-        logDebug("Invalid file type for $fileInput: " . $mimeType);
-        return null;
-    }
-
-    // Get extension
-    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-
-    // Build filename: {report_name}_{type}.{ext}
-    $filename = buildImageFilename($reportName, $type, $extension);
-    $targetPath = $imagesDir . '/' . $filename;
-
-    // Move uploaded file (will overwrite if exists)
-    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
-        logDebug("Uploaded image: $filename");
-        return $filename;
-    }
-
-    logDebug("Failed to move uploaded file for $fileInput");
-    return null;
-}
-
 // Get form data
 global $GENERATE_FIELDS;
 $input = getFormInput($GENERATE_FIELDS);
@@ -90,9 +35,13 @@ if (!$validation['valid']) {
 $sanitizedFileName = sanitizeFilename($input['file_name']);
 $input['file_name'] = $sanitizedFileName;
 
-// Handle image uploads with new naming convention
-$articleImage = handleImageUpload('article_image', $sanitizedFileName, 'article');
-$pdfCoverImage = handleImageUpload('pdf_cover', $sanitizedFileName, 'cover');
+// Handle image uploads with naming convention
+$articleImage = isset($_FILES['article_image']) && $_FILES['article_image']['error'] !== UPLOAD_ERR_NO_FILE
+    ? handleImageUpload($_FILES['article_image'], $imagesDir, $sanitizedFileName, 'article')
+    : null;
+$pdfCoverImage = isset($_FILES['pdf_cover']) && $_FILES['pdf_cover']['error'] !== UPLOAD_ERR_NO_FILE
+    ? handleImageUpload($_FILES['pdf_cover'], $imagesDir, $sanitizedFileName, 'cover')
+    : null;
 
 // Use existing images if no new upload (and match the current report name)
 if ($articleImage === null && !empty($input['article_image_existing'])) {
@@ -102,7 +51,6 @@ if ($articleImage === null && !empty($input['article_image_existing'])) {
     if ($existingImage === $expectedArticleImage) {
         $articleImage = $existingImage;
     } else {
-        // Old image from different report name - don't use it
         $articleImage = null;
     }
 }
@@ -114,7 +62,6 @@ if ($pdfCoverImage === null && !empty($input['pdf_cover_existing'])) {
     if ($existingImage === $expectedCoverImage) {
         $pdfCoverImage = $existingImage;
     } else {
-        // Old image from different report name - don't use it
         $pdfCoverImage = null;
     }
 }
@@ -164,9 +111,6 @@ switch ($reportType) {
         sendError('Unknown report type: ' . $reportType);
         break;
 }
-
-// Log generation result
-logDebug("Generated $reportType report for: " . $sanitizedFileName . " - Success: " . ($result['success'] ? 'yes' : 'no'));
 
 // Send response
 if ($result['success']) {

@@ -149,13 +149,13 @@ class ReportSettingService
         // Handle article image upload
         $articleImage = null;
         if (isset($files['article_image']) && $files['article_image']['error'] == 0) {
-            $articleImage = $this->handleImageUpload($files['article_image'], $sanitizedFileName, 'article');
+            $articleImage = handleImageUpload($files['article_image'], $this->imagesPath, $sanitizedFileName, 'article');
         }
 
         // Handle PDF cover image upload
         $coverImage = null;
         if (isset($files['pdf_cover']) && $files['pdf_cover']['error'] == 0) {
-            $coverImage = $this->handleImageUpload($files['pdf_cover'], $sanitizedFileName, 'cover');
+            $coverImage = handleImageUpload($files['pdf_cover'], $this->imagesPath, $sanitizedFileName, 'cover');
         }
 
         // Handle manual PDF upload
@@ -185,10 +185,6 @@ class ReportSettingService
             'updated_at' => date('c')
         );
 
-        // Debug logging
-        logDebug('Saving config - file_name: "' . $originalFileName . '" (stored original), sanitized for files: "' . $sanitizedFileName . '"');
-        logDebug('Saving config - title: "' . $report['title'] . '", author: "' . $report['author'] . '"');
-
         if ($isUpdate) {
             // Update existing report - preserve images if not updated
             $updated = false;
@@ -211,7 +207,7 @@ class ReportSettingService
                 return array('success' => false, 'message' => 'Report not found');
             }
         } else {
-            // Create new report
+            // Create a new report setting
             $data['last_id'] = $report['id'];
             $data['reports'][] = $report;
         }
@@ -273,33 +269,7 @@ class ReportSettingService
     }
 
     /**
-     * Handle image upload with new naming convention
-     * Filename format: {sanitized_report_name}_{type}.{ext}
-     *
-     * @param array $file Uploaded file data from $_FILES
-     * @param string $fileName Base file name for the report (already sanitized)
-     * @param string $type Image type (article or cover)
-     * @return string|null Generated filename or null on failure
-     */
-    private function handleImageUpload($file, $fileName, $type)
-    {
-        if ($file['error'] != 0) {
-            return null;
-        }
-
-        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-        // Build filename: {file_name}_{type}.{ext}
-        $filename = buildImageFilename($fileName, $type, $ext);
-
-        if (move_uploaded_file($file['tmp_name'], $this->imagesPath . '/' . $filename)) {
-            return $filename;
-        }
-
-        return null;
-    }
-
-    /**
-     * Handle manual PDF upload with new naming convention
+     * Handle manual PDF upload with a new naming convention
      * Filename format: {sanitized_report_name}.pdf
      *
      * @param array $file Uploaded file data from $_FILES
