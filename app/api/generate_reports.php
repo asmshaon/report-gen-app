@@ -22,10 +22,13 @@ if (!is_dir($logsDir)) {
 }
 
 /**
- * Handle image upload
+ * Handle image upload with new naming convention
+ * Filename format: {sanitized_report_name}_{type}.{ext}
  */
-function handleImageUpload($fileInput, $targetDir, $prefix = 'img')
+function handleImageUpload($fileInput, $reportName, $type)
 {
+    global $imagesDir;
+
     if (!isset($_FILES[$fileInput]) || $_FILES[$fileInput]['error'] === UPLOAD_ERR_NO_FILE) {
         return null;
     }
@@ -56,13 +59,16 @@ function handleImageUpload($fileInput, $targetDir, $prefix = 'img')
         return null;
     }
 
-    // Generate unique filename
+    // Get extension
     $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $filename = $prefix . '_' . time() . '_' . mt_rand(1000, 9999) . '.' . $extension;
-    $targetPath = $targetDir . '/' . $filename;
 
-    // Move uploaded file
+    // Build filename: {report_name}_{type}.{ext}
+    $filename = buildImageFilename($reportName, $type, $extension);
+    $targetPath = $imagesDir . '/' . $filename;
+
+    // Move uploaded file (will overwrite if exists)
     if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+        logDebug("Uploaded image: $filename");
         return $filename;
     }
 
@@ -80,31 +86,42 @@ if (!$validation['valid']) {
     sendError('Missing required fields: ' . implode(', ', $validation['missing']));
 }
 
-// Trim file_name to avoid whitespace issues
-$input['file_name'] = trim($input['file_name']);
+// Sanitize file name
+$sanitizedFileName = sanitizeFilename($input['file_name']);
+$input['file_name'] = $sanitizedFileName;
 
-// Handle image uploads
-logDebug('FILES: ' . json_encode(array_keys($_FILES)));
-logDebug('article_image set: ' . (isset($_FILES['article_image']) ? 'YES' : 'NO'));
-if (isset($_FILES['article_image'])) {
-    logDebug('article_image error: ' . $_FILES['article_image']['error']);
-}
-$articleImage = handleImageUpload('article_image', $imagesDir, 'article');
-$pdfCoverImage = handleImageUpload('pdf_cover', $imagesDir, 'cover');
-logDebug('Upload results - article: ' . ($articleImage ?: 'null') . ', cover: ' . ($pdfCoverImage ?: 'null'));
+// Handle image uploads with new naming convention
+$articleImage = handleImageUpload('article_image', $sanitizedFileName, 'article');
+$pdfCoverImage = handleImageUpload('pdf_cover', $sanitizedFileName, 'cover');
 
-// Use existing images if no new upload
+// Use existing images if no new upload (and match the current report name)
 if ($articleImage === null && !empty($input['article_image_existing'])) {
-    $articleImage = $input['article_image_existing'];
+    $existingImage = $input['article_image_existing'];
+    // Check if existing image matches current report name
+    $expectedArticleImage = buildImageFilename($sanitizedFileName, 'article', pathinfo($existingImage, PATHINFO_EXTENSION));
+    if ($existingImage === $expectedArticleImage) {
+        $articleImage = $existingImage;
+    } else {
+        // Old image from different report name - don't use it
+        $articleImage = null;
+    }
 }
 
 if ($pdfCoverImage === null && !empty($input['pdf_cover_existing'])) {
-    $pdfCoverImage = $input['pdf_cover_existing'];
+    $existingImage = $input['pdf_cover_existing'];
+    // Check if existing image matches current report name
+    $expectedCoverImage = buildImageFilename($sanitizedFileName, 'cover', pathinfo($existingImage, PATHINFO_EXTENSION));
+    if ($existingImage === $expectedCoverImage) {
+        $pdfCoverImage = $existingImage;
+    } else {
+        // Old image from different report name - don't use it
+        $pdfCoverImage = null;
+    }
 }
 
 // Build config from form data
 $config = array(
-    'file_name' => $input['file_name'],
+    'file_name' => $sanitizedFileName,
     'title' => isset($input['report_title']) ? $input['report_title'] : 'Stock Report',
     'author' => isset($input['author_name']) ? $input['author_name'] : '',
     'number_of_stocks' => intval($input['stock_count']),
@@ -149,7 +166,7 @@ switch ($reportType) {
 }
 
 // Log generation result
-logDebug("Generated $reportType report for: " . $input['file_name'] . " - Success: " . ($result['success'] ? 'yes' : 'no'));
+logDebug("Generated $reportType report for: " . $sanitizedFileName . " - Success: " . ($result['success'] ? 'yes' : 'no'));
 
 // Send response
 if ($result['success']) {

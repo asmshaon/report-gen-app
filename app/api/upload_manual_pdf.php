@@ -18,10 +18,8 @@ if (empty($fileName)) {
     sendError('File name is required');
 }
 
-// Validate file name (alphanumeric, underscore, hyphen only)
-if (!preg_match('/^[a-zA-Z0-9_-]+$/', $fileName)) {
-    sendError('Invalid file name. Use only letters, numbers, underscores, and hyphens');
-}
+// Sanitize filename
+$sanitizedFileName = sanitizeFilename($fileName);
 
 // Handle PDF upload
 if (!isset($_FILES['pdf_file']) || $_FILES['pdf_file']['error'] !== UPLOAD_ERR_OK) {
@@ -41,12 +39,12 @@ if ($file['size'] > $maxSize) {
     sendError('File size must be less than 10MB');
 }
 
-// Build destination path
-$destination = $reportsPath . '/' . $fileName . '.pdf';
+// Build destination path - will overwrite if exists
+$destination = $reportsPath . '/' . $sanitizedFileName . '.pdf';
 
 // Move uploaded file
 if (move_uploaded_file($file['tmp_name'], $destination)) {
-    sendSuccess('PDF uploaded successfully as: ' . $fileName . '.pdf', array('file' => $fileName . '.pdf'));
+    sendSuccess('PDF uploaded successfully as: ' . $sanitizedFileName . '.pdf', array('file' => $sanitizedFileName . '.pdf'));
 } else {
     sendError('Failed to upload PDF');
 }

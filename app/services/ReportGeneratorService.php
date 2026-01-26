@@ -4,7 +4,7 @@
  * ReportGeneratorService - Service for generating HTML, PDF, and Flipbook reports
  */
 
-require_once __DIR__ . '/../../lib/mpdf/mpdf.php';
+date_default_timezone_set('UTC');
 
 class ReportGeneratorService
 {
@@ -24,6 +24,11 @@ class ReportGeneratorService
     private $imagesPath;
 
     /**
+     * @var string Path to logs directory
+     */
+    private $logsPath;
+
+    /**
      * @var array CSV data cache
      */
     private $csvData = array();
@@ -36,6 +41,15 @@ class ReportGeneratorService
         $this->dataPath = __DIR__ . '/../../db';
         $this->reportsPath = __DIR__ . '/../../reports';
         $this->imagesPath = __DIR__ . '/../../images';
+        $this->logsPath = __DIR__ . '/../../logs';
+
+        // Ensure reports and logs directories exist
+        if (!is_dir($this->reportsPath)) {
+            mkdir($this->reportsPath, 0755, true);
+        }
+        if (!is_dir($this->logsPath)) {
+            mkdir($this->logsPath, 0755, true);
+        }
     }
 
     /**
@@ -46,21 +60,11 @@ class ReportGeneratorService
      */
     public function generateHtml(array $config)
     {
-        // Ensure reports directory exists
-        if (!is_dir($this->reportsPath)) {
-            mkdir($this->reportsPath, 0755, true);
+        // Load stock data
+        $stocks = $this->loadStockData($config);
+        if (!$stocks['success']) {
+            return $stocks;
         }
-
-        // Load CSV data
-        $csvFile = $this->dataPath . '/' . $config['data_source'];
-        if (!file_exists($csvFile)) {
-            return array(
-                'success' => false,
-                'message' => 'Data source file not found: ' . $config['data_source']
-            );
-        }
-
-        $stocks = $this->parseCsv($csvFile, $config['number_of_stocks']);
 
         // Start building HTML - use article-body wrapper
         $html = '<div id="article-body">' . "\n\n";
@@ -69,7 +73,7 @@ class ReportGeneratorService
         $html .= '<div class="mainarticle" style="width: 100%"><div><title></title>';
 
         // Debug log
-        file_put_contents(__DIR__ . '/../../logs/debug.log', date('Y-m-d H:i:s') . " HTML gen - images: " . json_encode($config['images']) . "\n", FILE_APPEND);
+        file_put_contents($this->logsPath . '/debug.log', date('Y-m-d H:i:s') . " HTML gen - images: " . json_encode($config['images']) . "\n", FILE_APPEND);
 
         // Add article image if exists
         if (!empty($config['images']['article_image'])) {
@@ -94,7 +98,7 @@ class ReportGeneratorService
             ? $config['content_templates']['stock_block_html']
             : $this->getDefaultStockBlockTemplate();
 
-        foreach ($stocks as $stock) {
+        foreach ($stocks['data'] as $stock) {
             $stockHtml = $this->replaceShortcodes(
                 $stockBlockTemplate,
                 $stock,
@@ -113,7 +117,7 @@ class ReportGeneratorService
         $html .= '</div>';
 
         // Write to file
-        $outputFile = $this->reportsPath . '/' . $config['file_name'] . '.html';
+        $outputFile = $this->getReportPath($config['file_name'] . '.html');
         if (file_put_contents($outputFile, $html) !== false) {
             return array(
                 'success' => true,
@@ -137,27 +141,17 @@ class ReportGeneratorService
      */
     public function generatePdf(array $config)
     {
-        // Ensure reports directory exists
-        if (!is_dir($this->reportsPath)) {
-            mkdir($this->reportsPath, 0755, true);
+        // Load stock data
+        $stocks = $this->loadStockData($config);
+        if (!$stocks['success']) {
+            return $stocks;
         }
-
-        // Load CSV data
-        $csvFile = $this->dataPath . '/' . $config['data_source'];
-        if (!file_exists($csvFile)) {
-            return array(
-                'success' => false,
-                'message' => 'Data source file not found: ' . $config['data_source']
-            );
-        }
-
-        $stocks = $this->parseCsv($csvFile, $config['number_of_stocks']);
 
         // Build a complete HTML document for PDF
-        $html = $this->buildPdfHtml($config, $stocks);
+        $html = $this->buildPdfHtml($config, $stocks['data']);
 
-        // Output PDF file path - use an absolute path
-        $pdfFile = $this->reportsPath . '/' . $config['file_name'] . '.pdf';
+        // Output PDF file path
+        $pdfFile = $this->getReportPath($config['file_name'] . '.pdf');
 
         // Generate PDF using mPDF
         $result = $this->convertHtmlToPdfWithMpdf($html, $pdfFile);
@@ -182,39 +176,29 @@ class ReportGeneratorService
      */
     public function generateFlipbook(array $config)
     {
-        // Ensure reports directory exists
-        if (!is_dir($this->reportsPath)) {
-            mkdir($this->reportsPath, 0755, true);
+        // Load stock data
+        $stocks = $this->loadStockData($config);
+        if (!$stocks['success']) {
+            return $stocks;
         }
-
-        // Load CSV data
-        $csvFile = $this->dataPath . '/' . $config['data_source'];
-        if (!file_exists($csvFile)) {
-            return array(
-                'success' => false,
-                'message' => 'Data source file not found: ' . $config['data_source']
-            );
-        }
-
-        $stocks = $this->parseCsv($csvFile, $config['number_of_stocks']);
 
         // Build flipbook HTML
-        $html = $this->buildFlipbookHtml($config, $stocks);
+        $html = $this->buildFlipbookHtml($config, $stocks['data']);
 
-        // Write to file - save as single HTML file in reports directory
-        $flipbookFile = $this->reportsPath . '/' . $config['file_name'] . 'Flipbook.html';
+        // Write to file
+        $flipbookFile = $this->getReportPath($config['file_name'] . '_flipbook.html');
         if (file_put_contents($flipbookFile, $html) !== false) {
             return array(
                 'success' => true,
                 'message' => 'Flipbook report generated successfully',
-                'file' => $config['file_name'] . 'Flipbook.html',
+                'file' => $config['file_name'] . '_flipbook.html',
                 'path' => $flipbookFile
             );
         }
 
         return array(
             'success' => false,
-            'message' => 'Failed to write flipbook file'
+            'message' => 'Failed to generate flipbook report'
         );
     }
 
@@ -258,6 +242,40 @@ class ReportGeneratorService
         }
 
         return $results;
+    }
+
+    /**
+     * Load stock data from CSV file
+     *
+     * @param array $config Report configuration
+     * @return array Result with success status and data
+     */
+    private function loadStockData(array $config)
+    {
+        $csvFile = $this->dataPath . '/' . $config['data_source'];
+        if (!file_exists($csvFile)) {
+            return array(
+                'success' => false,
+                'message' => 'Data source file not found: ' . $config['data_source']
+            );
+        }
+
+        $stocks = $this->parseCsv($csvFile, $config['number_of_stocks']);
+        return array(
+            'success' => true,
+            'data' => $stocks
+        );
+    }
+
+    /**
+     * Get full path for a report file
+     *
+     * @param string $filename Report filename
+     * @return string Full path to report file
+     */
+    private function getReportPath($filename)
+    {
+        return $this->reportsPath . '/' . $filename;
     }
 
     /**
@@ -561,11 +579,11 @@ class ReportGeneratorService
 </head>
 <body>';
 
-        // Add cover page with PDF cover image (full page) - use relative path for mPDF
+        // Add cover page with PDF cover image (full page)
         if (!empty($config['images']['pdf_cover_image'])) {
-            $imagePath = __DIR__ . '/../../images/' . $config['images']['pdf_cover_image'];
+            $imagePath = $this->imagesPath . '/' . $config['images']['pdf_cover_image'];
             if (file_exists($imagePath)) {
-                // mPDF needs path relative to the script that calls it (app/api/)
+                // mPDF needs path relative to the mpdf.php script location (lib/mpdf/)
                 $relativePath = '../../images/' . $config['images']['pdf_cover_image'];
                 $html .= '<div style="height: 800px;width: 100%; text-align: center;page-break-after: always">
                     <img src="' . $relativePath . '" alt="Cover" style="width: 100%; height: 100%; object-fit: contain;" />
@@ -780,9 +798,11 @@ class ReportGeneratorService
      */
     private function convertHtmlToPdfWithMpdf($html, $pdfFile)
     {
+        // Load mPDF only when needed
+        require_once __DIR__ . '/../../lib/mpdf/mpdf.php';
+
         try {
             // Initialize mPDF (version 6.x constructor syntax)
-            // mPDF($mode='', $format='A4', $default_font_size=0, $default_font='', $mgl=15, $mgr=15, $mgt=16, $mgb=16, $mgh=9, $mgf=9, $orientation='P')
             $mpdf = new mPDF('utf-8', 'A4', 0, '', 15, 15, 16, 16, 9, 9, 'P');
 
             // Set some document properties
@@ -814,34 +834,5 @@ class ReportGeneratorService
                 'message' => 'PDF generation error: ' . $e->getMessage()
             );
         }
-    }
-
-    /**
-     * Convert image file to base64 data URI
-     *
-     * @param string $imagePath Path to image file
-     * @return string|null Base64 data URI or null on failure
-     */
-    private function getImageAsBase64($imagePath)
-    {
-        if (!file_exists($imagePath)) {
-            return null;
-        }
-
-        $imageData = file_get_contents($imagePath);
-        if ($imageData === false) {
-            return null;
-        }
-
-        // Detect image type
-        $imageInfo = getimagesize($imagePath);
-        if ($imageInfo === false) {
-            return null;
-        }
-
-        $mimeType = $imageInfo['mime'];
-        $base64 = base64_encode($imageData);
-
-        return 'data:' . $mimeType . ';base64,' . $base64;
     }
 }

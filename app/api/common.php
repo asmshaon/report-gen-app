@@ -14,7 +14,7 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
-// Enable error logging but don't display to user
+// Enable error logging but don't display to the user
 ini_set('log_errors', 1);
 ini_set('display_errors', 0);
 ini_set('error_log', __DIR__ . '/../../logs/debug.log');
@@ -164,7 +164,48 @@ function logDebug($message)
     file_put_contents($logFile, $timestamp . ' ' . $message . "\n", FILE_APPEND);
 }
 
-// Common field definitions for forms (PHP 5.6 doesn't support array constants with define())
+/**
+ * Sanitize filename - lowercase, remove special chars, only underscores allowed
+ * Converts "My File-Name!" to "my_file_name"
+ *
+ * @param string $filename Original filename
+ * @return string Sanitized filename
+ */
+function sanitizeFilename($filename)
+{
+    // Convert to lowercase
+    $filename = strtolower($filename);
+
+    // Replace spaces and special chars with underscores
+    // Keep only letters, numbers, and underscores
+    $filename = preg_replace('/[^a-z0-9]+/', '_', $filename);
+
+    // Remove leading/trailing underscores
+    $filename = trim($filename, '_');
+
+    // Don't allow empty filenames
+    if (empty($filename)) {
+        $filename = 'unnamed_' . time();
+    }
+
+    return $filename;
+}
+
+/**
+ * Build image filename from report name and type
+ * Example: "My Report" + "article" → "my_report_article.jpg"
+ *
+ * @param string $reportName Report file name
+ * @param string $type Image type (article or cover)
+ * @param string $extension File extension
+ * @return string Generated filename
+ */
+function buildImageFilename($reportName, $type, $extension)
+{
+    $sanitized = sanitizeFilename($reportName);
+    return $sanitized . '_' . $type . '.' . $extension;
+}
+
 global $CONFIG_FIELDS;
 $CONFIG_FIELDS = array(
     'id', 'file_name', 'report_title', 'author_name', 'stock_count',

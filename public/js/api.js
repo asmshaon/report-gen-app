@@ -250,7 +250,12 @@ function formManager() {
 
                 if (result.success) {
                     alert(result.message);
-                    this.resetForm();
+
+                    // Only reset form when creating new config, not when editing
+                    if (!this.editingId) {
+                        this.resetForm();
+                    }
+
                     // Notify other components to refresh
                     store.notifyRefresh();
                 } else {
@@ -318,7 +323,7 @@ function reportGenerator() {
 
                     // Handle a single file (html, pdf, flipbook)
                     if (data.file) {
-                        message += '. <a href="reports/' + data.file + '" target="_blank" class="alert-link">View ' + data.type.toUpperCase() + ' Report</a>';
+                        message += '. <a href="reports/' + data.file + '" target="_blank" class="alert-link">View Report</a>';
                     } else if (data.html || data.pdf || data.flipbook) {
                         // Multiple files generated (report type: all)
                         const links = [];

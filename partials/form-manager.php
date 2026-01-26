@@ -6,6 +6,9 @@
     <div class="card-body">
         <form @submit.prevent="saveForm" enctype="multipart/form-data">
             <input type="hidden" name="id" x-model="formData.id">
+            <!-- Hidden inputs for existing images - used when generating reports -->
+            <input type="hidden" name="article_image_existing" x-model="formData.images.article_image">
+            <input type="hidden" name="pdf_cover_existing" x-model="formData.images.pdf_cover_image">
 
             <h6 class="section-header">Basic Information</h6>
             <div class="row">
