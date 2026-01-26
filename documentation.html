@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Awesome Report Generator Application - Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f6f8fa;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: #fff;
+            min-height: 100vh;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #24292e;
+            border-bottom: 2px solid #e1e4e8;
+            padding-bottom: 15px;
+        }
+
+        .subtitle {
+            color: #586069;
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            margin-top: 40px;
+            margin-bottom: 15px;
+            color: #24292e;
+            border-bottom: 1px solid #e1e4e8;
+            padding-bottom: 8px;
+        }
+
+        h3 {
+            font-size: 1.4rem;
+            margin-top: 25px;
+            margin-bottom: 12px;
+            color: #24292e;
+        }
+
+        h4 {
+            font-size: 1.2rem;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: #24292e;
+        }
+
+        p {
+            margin-bottom: 15px;
+        }
+
+        ul, ol {
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: #fff;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border: 1px solid #d0d7de;
+        }
+
+        th {
+            background: #f6f8fa;
+            font-weight: 600;
+            color: #24292e;
+        }
+
+        tr:hover {
+            background: #f6f8fa;
+        }
+
+        code {
+            background: #f6f8fa;
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.9em;
+            color: #24292e;
+        }
+
+        pre {
+            background: #f6f8fa;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 15px 0;
+            border: 1px solid #d0d7de;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            border: none;
+            color: #24292e;
+        }
+
+        blockquote {
+            border-left: 4px solid #d0d7de;
+            padding-left: 15px;
+            margin: 15px 0;
+            color: #586069;
+            font-style: italic;
+        }
+
+        strong {
+            font-weight: 600;
+        }
+
+        a {
+            color: #0969da;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid #e1e4e8;
+            margin: 30px 0;
+        }
+
+        .alert {
+            background: #fff8c5;
+            border: 1px solid #d4a72c;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .section-divider {
+            border: none;
+            border-top: 2px solid #e1e4e8;
+            margin: 40px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Awesome Report Generator Application</h1>
+        <p class="subtitle">A stock market research report generation tool that creates professional HTML, PDF, and interactive flipbook reports with real-time TradingView charts.</p>
+
+        <hr class="section-divider">
+
+        <h2>Tech Stack</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Technology</th>
+                    <th>Version</th>
+                    <th>Purpose</th>
+                    <th>Why Chosen</th>
+                    <th>Link</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>PHP</strong></td>
+                    <td>5.5+</td>
+                    <td>Backend Logic</td>
+                    <td>Lightweight, runs on virtually any hosting, no complex setup needed</td>
+                    <td><a href="https://www.php.net/" target="_blank">php.net</a></td>
+                </tr>
+                <tr>
+                    <td><strong>mPDF</strong></td>
+                    <td>6.x / 7.1.9</td>
+                    <td>PDF Generation</td>
+                    <td>Converts HTML to PDF, supports CSS, images, and complex layouts</td>
+                    <td><a href="https://mpdf.github.io/" target="_blank">mpdf.github.io</a></td>
+                </tr>
+                <tr>
+                    <td><strong>Bootstrap</strong></td>
+                    <td>4.3.1</td>
+                    <td>UI Framework</td>
+                    <td>Responsive design, pre-built components, cross-browser compatible</td>
+                    <td><a href="https://getbootstrap.com/" target="_blank">getbootstrap.com</a></td>
+                </tr>
+                <tr>
+                    <td><strong>Alpine.js</strong></td>
+                    <td>3.x</td>
+                    <td>Frontend Interactivity</td>
+                    <td>Lightweight (15KB), no build step, easy to embed</td>
+                    <td><a href="https://alpinejs.dev/" target="_blank">alpinejs.dev</a></td>
+                </tr>
+                <tr>
+                    <td><strong>jQuery</strong></td>
+                    <td>1.11.0</td>
+                    <td>DOM Manipulation</td>
+                    <td>Required by turn.js flipbook library</td>
+                    <td><a href="https://jquery.com/" target="_blank">jquery.com</a></td>
+                </tr>
+                <tr>
+                    <td><strong>turn.js</strong></td>
+                    <td>-</td>
+                    <td>Flipbook Effect</td>
+                    <td>Creates page-flipping animation for reports</td>
+                    <td><a href="http://turnjs.com/" target="_blank">turnjs.com</a></td>
+                </tr>
+                <tr>
+                    <td><strong>TradingView Widgets</strong></td>
+                    <td>-</td>
+                    <td>Stock Charts</td>
+                    <td>Real-time, interactive financial charts</td>
+                    <td><a href="https://www.tradingview.com/widget/" target="_blank">tradingview.com/widget</a></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Requirements</h2>
+
+        <h3>Server Requirements</h3>
+        <ul>
+            <li><strong>PHP 5.5 or higher</strong></li>
+            <li><strong>PHP Extensions:</strong>
+                <ul>
+                    <li><code>zip</code> - For PDF compression</li>
+                    <li><code>intl</code> - For internationalization</li>
+                    <li><code>mbstring</code> - For string handling</li>
+                    <li><code>gd</code> - For image processing</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h3>File Permissions</h3>
+        <ul>
+            <li>Writable <code>reports/</code> directory for generated reports</li>
+            <li>Writable <code>db/</code> directory for configurations</li>
+            <li>Writable <code>logs/</code> directory for application logs</li>
+        </ul>
+
+        <h3>Optional (Docker)</h3>
+        <ul>
+            <li>Docker Engine 20.10+</li>
+            <li>Docker Compose 1.29+</li>
+        </ul>
+
+        <hr class="section-divider">
+
+        <h2>Installation</h2>
+
+        <h3>Option 1: Traditional Hosting (Recommended)</h3>
+        <p>This application can be deployed to <strong>root domain</strong> (e.g., <code>https://example.com/</code>) or a <strong>subfolder</strong> (e.g., <code>https://example.com/reports/</code>).</p>
+
+        <h4>Step 1: Upload Files</h4>
+        <p><strong>To Root Directory:</strong></p>
+        <pre><code># Upload all project files to your server's public root
+# Example: /var/www/html/ or /home/user/public_html/</code></pre>
+
+        <p><strong>To Subfolder:</strong></p>
+        <pre><code># Upload all project files to a subdirectory
+# Example: /var/www/html/reports/ or /home/user/public_html/reports/</code></pre>
+
+        <p>You can upload via:</p>
+        <ul>
+            <li>FTP/SFTP client (FileZilla, WinSCP, Cyberduck)</li>
+            <li>cPanel File Manager</li>
+        </ul>
+
+        <h4>Step 2: Install Dependencies</h4>
+
+        <h4>Step 3: Set File Permissions</h4>
+        <pre><code># Make directories writable
+chmod 755 reports db logs
+chmod 644 reports/* db/* logs/* 2>/dev/null || true</code></pre>
+
+        <h4>Step 4: Access the Application</h4>
+        <ul>
+            <li><strong>Root deployment:</strong> <code>https://your-domain.com/report_manager.php</code></li>
+            <li><strong>Subfolder deployment:</strong> <code>https://your-domain.com/subfolder/report_manager.php</code></li>
+        </ul>
+
+        <hr class="section-divider">
+
+        <h3>Option 2: Docker Setup (Optional)</h3>
+        <p>For local development or environments with Docker.</p>
+        <pre><code># Build and start the container
+docker-compose up -d
+
+# Access the application
+http://localhost:8081/report_manager.php
+
+# Stop the container
+docker-compose down</code></pre>
+
+        <hr class="section-divider">
+
+        <h2>Usage</h2>
+
+        <h3>Creating a Report Configuration</h3>
+        <ol>
+            <li>Navigate to <code>report_manager.php</code></li>
+            <li>Fill in the form:
+                <ul>
+                    <li><strong>Report File Name</strong>: A unique identifier for this report</li>
+                    <li><strong>Upload Article Image</strong>: Upload an image to be displayed in the report</li>
+                    <li><strong>PDF Cover Image</strong>: Upload an image to be displayed as the cover page of the PDF</li>
+                </ul>
+            </li>
+            <li>Click <strong>Save Report Configuration</strong></li>
+            <li>Report configurations are saved in the <code>db/report_settings.json</code> file</li>
+        </ol>
+
+        <h3>Generating Reports</h3>
+        <p>Reports can be generated in two ways:</p>
+
+        <h4>Option 1: Generate Directly from Form</h4>
+        <ol>
+            <li>Navigate to <code>report_manager.php</code></li>
+            <li>Fill in the form fields with your desired data (no need to save)</li>
+            <li>Choose report type: [optional]
+                <ul>
+                    <li><strong>HTML</strong> - Web page with embedded charts</li>
+                    <li><strong>PDF</strong> - Downloadable PDF document</li>
+                    <li><strong>Flipbook</strong> - Interactive page-flipping book</li>
+                </ul>
+            </li>
+            <li>Click <strong>"Generate Report"</strong> button to generate the report</li>
+            <li>Reports are saved in the <code>reports</code> folder</li>
+        </ol>
+
+        <h4>Option 2: Generate from Saved Configuration</h4>
+        <ol>
+            <li>Click the edit icon next to any saved configuration</li>
+            <li>Modify the form values if needed (or use as-is)</li>
+            <li>Choose report format: [optional]
+                <ul>
+                    <li><strong>HTML</strong> - Web page with embedded charts</li>
+                    <li><strong>PDF</strong> - Downloadable PDF document</li>
+                    <li><strong>Flipbook</strong> - Interactive page-flipping book</li>
+                </ul>
+            </li>
+            <li>Click <strong>Generate Report</strong></li>
+            <li>Reports are saved in the <code>reports/</code> directory</li>
+        </ol>
+
+        <h3>Managing Configurations</h3>
+        <ul>
+            <li><strong>Edit</strong>: Click the edit icon next to any configuration</li>
+            <li><strong>Delete</strong>: Click the delete icon to remove a configuration</li>
+            <li><strong>Upload Manual PDF</strong>: Use the uploader to add pre-made PDFs</li>
+        </ul>
+
+        <hr class="section-divider">
+
+        <h2>Directory Structure</h2>
+        <pre><code>awesome-report-gen-app/
+├── app/
+│   ├── api/                    # API endpoints
+│   │   ├── generate_reports.php
+│   │   ├── post_configuration.php
+│   │   ├── get_configurations.php
+│   │   ├── delete_configuration.php
+│   │   └── upload_manual_pdf.php
+│   └── services/
+│       └── ReportGeneratorService.php   # Core report generation logic
+├── db/
+│   ├── data.csv               # Stock data source
+│   └── report_settings.json   # Saved configurations
+├── public/
+│   ├── css/styles.css         # Application styles
+│   └── js/api.js              # Frontend JavaScript
+├── partials/                  # HTML partials
+│   ├── config-list.php
+│   ├── filter.php
+│   ├── form-manager.php
+│   └── manual-pdf-uploader.php
+├── reports/                   # Generated reports (writable)
+├── logs/                      # Application logs (writable)
+├── images/                    # Image assets
+├── index.php                  # Landing page
+├── report_manager.php         # Main application
+├── composer.json              # PHP dependencies
+├── Dockerfile                 # Docker configuration (optional)
+└── docker-compose.yml         # Docker compose setup (optional)</code></pre>
+
+        <hr class="section-divider">
+
+        <h2>Troubleshooting</h2>
+
+        <h3>PDF Generation Fails</h3>
+        <p><strong>Issue:</strong> Reports generate but PDF creation fails</p>
+        <p><strong>Solutions:</strong></p>
+        <ol>
+            <li>Check file permissions: <code>chmod 755 reports/</code></li>
+            <li>Increase PHP memory limit in <code>php.ini</code>: <code>memory_limit = 256M</code></li>
+        </ol>
+
+        <h3>Charts Not Displaying</h3>
+        <p><strong>Issue:</strong> TradingView charts don't appear in reports</p>
+        <p><strong>Solutions:</strong></p>
+        <ol>
+            <li>Check internet connection (charts load from TradingView CDN)</li>
+            <li>Verify ticker symbol is valid</li>
+            <li>Check browser console for JavaScript errors</li>
+        </ol>
+
+        <h3>Permission Errors</h3>
+        <p><strong>Issue:</strong> Cannot save configurations or reports</p>
+        <p><strong>Solution:</strong></p>
+        <pre><code>chmod 755 reports db logs
+chown www-data:www-data reports db logs  # For Apache/Nginx</code></pre>
+
+        <hr class="section-divider">
+
+        <h2>Support</h2>
+        <p>For issues or questions, please contact the with me.</p>
+    </div>
+</body>
+</html>

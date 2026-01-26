@@ -621,22 +621,7 @@ class ReportGeneratorService
         if (!empty($config['content_templates']['disclaimer_html'])) {
             $pages .= '<div class="page">
 			    <div id="disclaimer">
-			        <center><h2>Terms and Conditions</h2><br/>LEGAL NOTICE</center><br/>
 			        <div>' . $config['content_templates']['disclaimer_html'] . '</div>
-			    </div>
-			</div>';
-        }
-
-        // Intro page
-        if (!empty($config['content_templates']['intro_html'])) {
-            $introContent = $this->replaceShortcodes(
-                $config['content_templates']['intro_html'],
-                null,
-                $config
-            );
-            $pages .= '<div class="page">
-			    <div id="top-stocks-intro-text" style="height: 100%; background-color: white; padding: 25px;">
-			        ' . $introContent . '
 			    </div>
 			</div>';
         }
