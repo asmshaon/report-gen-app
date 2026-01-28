@@ -316,11 +316,11 @@ function reportGenerator() {
         sourceType: 'form',
         sourceTypes: [
             { value: 'form', label: 'Form Values' },
-            { value: 'config', label: 'Active Configurations' }
+            { value: 'config', label: 'Report Settings' }
         ],
         reportType: 'all',
         reportTypes: [
-            { value: 'all', label: 'All Reports' },
+            { value: 'all', label: 'All Types' },
             { value: 'html', label: 'HTML Report' },
             { value: 'pdf', label: 'PDF Report' },
             { value: 'flipbook', label: 'Flipbook Report' }
