@@ -5,6 +5,7 @@ require_once __DIR__ . '/common.php';
 
 // Include required services
 require_once __DIR__ . '/../services/ReportGeneratorService.php';
+require_once __DIR__ . '/../services/ReportSettingService.php';
 
 // Get form data
 global $GENERATE_FIELDS;
@@ -21,7 +22,29 @@ $generator = new ReportGeneratorService();
 
 // Sanitize file name
 $sanitizedFileName = sanitizeFilename($input['file_name']);
+$originalFileName = $input['file_name'];
 $input['file_name'] = $sanitizedFileName;
+
+// Get the editing ID (if any)
+$editingId = isset($input['id']) ? $input['id'] : null;
+
+// Check for duplicate filename in saved configurations (for Form Values source)
+$settingService = new ReportSettingService();
+$configsResult = $settingService->getConfigurations();
+
+if ($configsResult['success'] && !empty($originalFileName)) {
+    $savedConfigs = $configsResult['data'];
+    foreach ($savedConfigs as $savedConfig) {
+        // Skip own record when editing
+        if ($editingId !== null && isset($savedConfig['id']) && $savedConfig['id'] == $editingId) {
+            continue;
+        }
+        // Check for duplicate filename (case-insensitive)
+        if (isset($savedConfig['file_name']) && strtolower($savedConfig['file_name']) === strtolower($originalFileName)) {
+            sendError('A saved configuration with filename "' . $originalFileName . '" already exists. Please use a different filename to avoid overwriting existing reports.');
+        }
+    }
+}
 
 // Handle image uploads with naming convention
 $articleImage = isset($_FILES['article_image']) && $_FILES['article_image']['error'] !== UPLOAD_ERR_NO_FILE

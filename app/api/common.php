@@ -33,7 +33,7 @@ $CONFIG_FIELDS = array(
 
 global $GENERATE_FIELDS;
 $GENERATE_FIELDS = array(
-    'file_name', 'report_title', 'author_name', 'stock_count',
+    'id', 'file_name', 'report_title', 'author_name', 'stock_count',
     'data_source', 'report_intro_html', 'stock_block_html', 'disclaimer_html',
     'article_image_existing', 'pdf_cover_existing', 'report_type'
 );

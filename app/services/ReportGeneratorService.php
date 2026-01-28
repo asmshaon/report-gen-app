@@ -358,6 +358,7 @@ class ReportGeneratorService
             $replacements['[Target Price]'] = isset($stock['Target Price']) ? $stock['Target Price'] : (isset($stock['Price']) ? $stock['Price'] : '');
             $marketCap = isset($stock['Market Cap']) && is_numeric($stock['Market Cap']) ? ($stock['Market Cap'] / 1000) : null;
             $replacements['[Market Cap]'] = $marketCap !== null ? number_format($marketCap, 2) . 'B' : '';
+            $replacements['[Exchage]'] = isset($stock['Exchage']) ? $stock['Exchage'] : (isset($stock['Exchange']) ? $stock['Exchange'] : '');
         }
 
         uksort($replacements, function($a, $b) {
