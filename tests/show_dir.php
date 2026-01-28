@@ -146,10 +146,10 @@ function checkPHPSettings() {
 
         <h2 style='color: #333; margin-top: 30px;'>Full Directory Structure (<?php echo $baseDir; ?>)</h2>
         <pre style="background: #f8f9fa; padding: 15px; border-radius: 4px; overflow-x: auto;">
-<?php
-checkDirectory($baseDir);
-scanDirectory($baseDir, 0, 3);
-?>
+        <?php
+            checkDirectory($baseDir);
+            scanDirectory($baseDir, 0, 3);
+        ?>
         </pre>
 
         <?php

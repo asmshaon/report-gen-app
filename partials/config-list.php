@@ -1,7 +1,7 @@
 <div class="card" x-data="configManager()" x-init="init()">
     <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Active Configurations</h5>
-        <span class="badge badge-light">Stored in reportSettings.json</span>
+        <span class="badge badge-light">Stored in report_settings.json</span>
     </div>
     <div class="card-body p-0 position-relative">
         <!-- Loading overlay for fetching configurations -->
