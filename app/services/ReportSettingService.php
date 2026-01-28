@@ -153,6 +153,20 @@ class ReportSettingService
         $originalFileName = isset($input['file_name']) ? $input['file_name'] : '';
         $sanitizedFileName = sanitizeFilename($originalFileName);
 
+        // Check for duplicate filename (skip own filename when updating)
+        if (!empty($originalFileName)) {
+            foreach ($data['reports'] as $r) {
+                // Skip own record when updating
+                if ($isUpdate && isset($r['id']) && $r['id'] == $input['id']) {
+                    continue;
+                }
+                // Check for duplicate filename (case-insensitive)
+                if (isset($r['file_name']) && strtolower($r['file_name']) === strtolower($originalFileName)) {
+                    return array('success' => false, 'message' => 'Configuration with filename "' . $originalFileName . '" already exists. Please use a different filename.');
+                }
+            }
+        }
+
         // Handle article image upload
         $articleImage = null;
         if (isset($files['article_image']) && $files['article_image']['error'] == 0) {

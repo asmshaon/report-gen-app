@@ -313,6 +313,11 @@ function formManager() {
 
 function reportGenerator() {
     return {
+        sourceType: 'form',
+        sourceTypes: [
+            { value: 'form', label: 'Form Values' },
+            { value: 'config', label: 'Active Configurations' }
+        ],
         reportType: 'all',
         reportTypes: [
             { value: 'all', label: 'All Reports' },
@@ -329,68 +334,110 @@ function reportGenerator() {
             this.resultMessage = '';
 
             try {
-                // Get form data from the page
-                const form = document.querySelector('form');
-                if (!form) {
-                    throw new Error('Form not found');
-                }
+                if (this.sourceType === 'config') {
+                    // Generate from all active configurations
+                    const response = await fetch('app/api/generate_from_config.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ids: 'all', report_type: this.reportType })
+                    });
 
-                // Validate required fields
-                const fileName = form.querySelector('[name="file_name"]').value;
-                const stockCount = form.querySelector('[name="stock_count"]').value;
+                    const result = await response.json();
 
-                if (!fileName || !stockCount) {
-                    this.resultMessage = 'Please fill all required fields to generate reports.';
-                    this.resultSuccess = false;
-                    this.generating = false;
-                    return;
-                }
+                    if (result.success) {
+                        let message = result.message || 'Reports generated successfully';
+                        const data = result.data || {};
 
-                // Collect form data
-                const formData = new FormData(form);
-                formData.append('report_type', this.reportType);
-
-                const response = await fetch('app/api/generate_reports.php', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    let message = result.message || 'Report generated successfully';
-                    const data = result.data || {};
-
-                    // Handle a single file (html, pdf, flipbook)
-                    if (data.file) {
-                        message += '. <a href="reports/' + data.file + '" target="_blank" class="alert-link">View Report</a>';
-                    } else if (data.html || data.pdf || data.flipbook) {
-                        // Multiple files generated (report type: all)
-                        const links = [];
-                        if (data.html) {
-                            links.push('<a href="reports/' + data.html + '" target="_blank" class="alert-link">HTML</a>');
-                        }
-                        if (data.pdf) {
-                            links.push('<a href="reports/' + data.pdf + '" target="_blank" class="alert-link">PDF</a>');
-                        }
-                        if (data.flipbook) {
-                            links.push('<a href="reports/' + data.flipbook + '" target="_blank" class="alert-link">Flipbook</a>');
-                        }
-                        if (links.length > 0) {
-                            message += '. View: ' + links.join(' | ');
+                        if (data.generated) {
+                            const types = [];
+                            if (data.generated.html && data.generated.html.length > 0) {
+                                types.push(data.generated.html.length + ' HTML');
+                            }
+                            if (data.generated.pdf && data.generated.pdf.length > 0) {
+                                types.push(data.generated.pdf.length + ' PDF');
+                            }
+                            if (data.generated.flipbook && data.generated.flipbook.length > 0) {
+                                types.push(data.generated.flipbook.length + ' Flipbook');
+                            }
+                            if (types.length > 0) {
+                                message += ' Generated: ' + types.join(', ');
+                            }
                         }
 
-                        // Show any failed reports
-                        if (data.failed && Object.keys(data.failed).length > 0) {
-                            message += '<br><small class="text-muted">Failed: ' + Object.keys(data.failed).join(', ').toUpperCase() + '</small>';
+                        if (data.failed && data.failed.length > 0) {
+                            message += '<br><small class="text-muted">Failed: ' + data.failed.join(', ') + '</small>';
                         }
+
+                        this.resultMessage = message;
+                        this.resultSuccess = true;
+                    } else {
+                        this.resultMessage = result.message || 'Failed to generate reports';
+                        this.resultSuccess = false;
+                    }
+                } else {
+                    // Generate from form values
+                    const form = document.querySelector('form');
+                    if (!form) {
+                        throw new Error('Form not found');
                     }
 
-                    this.resultMessage = message;
-                    this.resultSuccess = true;
-                } else {
-                    this.resultMessage = result.message || 'Failed to generate report';
-                    this.resultSuccess = false;
+                    // Validate required fields
+                    const fileName = form.querySelector('[name="file_name"]').value;
+                    const stockCount = form.querySelector('[name="stock_count"]').value;
+
+                    if (!fileName || !stockCount) {
+                        this.resultMessage = 'Please fill all required fields to generate reports.';
+                        this.resultSuccess = false;
+                        this.generating = false;
+                        return;
+                    }
+
+                    // Collect form data
+                    const formData = new FormData(form);
+                    formData.append('report_type', this.reportType);
+
+                    const response = await fetch('app/api/generate_reports.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        let message = result.message || 'Report generated successfully';
+                        const data = result.data || {};
+
+                        // Handle a single file (html, pdf, flipbook)
+                        if (data.file) {
+                            message += '. <a href="reports/' + data.file + '" target="_blank" class="alert-link">View Report</a>';
+                        } else if (data.html || data.pdf || data.flipbook) {
+                            // Multiple files generated (report type: all)
+                            const links = [];
+                            if (data.html) {
+                                links.push('<a href="reports/' + data.html + '" target="_blank" class="alert-link">HTML</a>');
+                            }
+                            if (data.pdf) {
+                                links.push('<a href="reports/' + data.pdf + '" target="_blank" class="alert-link">PDF</a>');
+                            }
+                            if (data.flipbook) {
+                                links.push('<a href="reports/' + data.flipbook + '" target="_blank" class="alert-link">Flipbook</a>');
+                            }
+                            if (links.length > 0) {
+                                message += '. View: ' + links.join(' | ');
+                            }
+
+                            // Show any failed reports
+                            if (data.failed && Object.keys(data.failed).length > 0) {
+                                message += '<br><small class="text-muted">Failed: ' + Object.keys(data.failed).join(', ').toUpperCase() + '</small>';
+                            }
+                        }
+
+                        this.resultMessage = message;
+                        this.resultSuccess = true;
+                    } else {
+                        this.resultMessage = result.message || 'Failed to generate report';
+                        this.resultSuccess = false;
+                    }
                 }
             } catch (error) {
                 console.error('Error generating report:', error);
