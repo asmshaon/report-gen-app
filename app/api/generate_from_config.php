@@ -15,28 +15,34 @@ if (!isset($input['ids'])) {
     sendError('Missing required field: ids (array of configuration IDs or "all")');
 }
 
-// Get report type (default to 'all')
+// Get the report type (default to 'all')
 $reportType = isset($input['report_type']) ? $input['report_type'] : 'all';
 
 // Initialize services
 $settingService = new ReportSettingService();
 $generator = new ReportGeneratorService();
 
-$ids = $input['ids'];
+// Determine which report types to generate
+$typesToGenerate = $reportType === 'all' ? array('html', 'pdf', 'flipbook') : array($reportType);
 
 // Handle 'all' - get all configuration IDs
+$ids = $input['ids'];
 if ($ids === 'all' || $ids === ['all']) {
     $configResult = $settingService->getConfigurations();
+
     if (!$configResult['success']) {
         sendError('Failed to retrieve configurations');
     }
+
     $configs = $configResult['data'];
     $ids = array();
+
     foreach ($configs as $config) {
         if (isset($config['id'])) {
             $ids[] = $config['id'];
         }
     }
+
     if (empty($ids)) {
         sendError('No configurations found');
     }
@@ -45,6 +51,7 @@ if ($ids === 'all' || $ids === ['all']) {
     if (!is_array($ids)) {
         $ids = array($ids);
     }
+
     if (empty($ids)) {
         sendError('No configuration IDs provided');
     }
@@ -56,11 +63,22 @@ $results = array(
     'failed' => array()
 );
 
+// Helper function to generate and track result
+function generateReportType($generator, $config, $type, &$results) {
+    $method = 'generate' . ucfirst($type);
+    $result = $generator->$method($config);
+
+    if ($result['success']) {
+        $results['generated'][$type][] = $config['title'];
+    } else {
+        $results['failed'][] = $config['title'] . ' (' . ucfirst($type) . ': ' . $result['message'] . ')';
+    }
+}
+
 // Process each configuration
 foreach ($ids as $id) {
     // Get configuration by ID
     $configResult = $settingService->getConfigurationById($id);
-
     if (!$configResult['success']) {
         $results['failed'][] = 'Config ID ' . $id . ' (not found)';
         continue;
@@ -79,65 +97,14 @@ foreach ($ids as $id) {
         'content_templates' => isset($configData['content_templates']) ? $configData['content_templates'] : array()
     );
 
-    // Generate reports based on selected type
-    switch ($reportType) {
-        case 'html':
-            $htmlResult = $generator->generateHtml($config);
-            if ($htmlResult['success']) {
-                $results['generated']['html'][] = $config['title'];
-            } else {
-                $results['failed'][] = $config['title'] . ' (HTML: ' . $htmlResult['message'] . ')';
-            }
-            break;
-
-        case 'pdf':
-            $pdfResult = $generator->generatePdf($config);
-            if ($pdfResult['success']) {
-                $results['generated']['pdf'][] = $config['title'];
-            } else {
-                $results['failed'][] = $config['title'] . ' (PDF: ' . $pdfResult['message'] . ')';
-            }
-            break;
-
-        case 'flipbook':
-            $flipbookResult = $generator->generateFlipbook($config);
-            if ($flipbookResult['success']) {
-                $results['generated']['flipbook'][] = $config['title'];
-            } else {
-                $results['failed'][] = $config['title'] . ' (Flipbook: ' . $flipbookResult['message'] . ')';
-            }
-            break;
-
-        case 'all':
-        default:
-            // Generate all report types
-            $htmlResult = $generator->generateHtml($config);
-            if ($htmlResult['success']) {
-                $results['generated']['html'][] = $config['title'];
-            } else {
-                $results['failed'][] = $config['title'] . ' (HTML: ' . $htmlResult['message'] . ')';
-            }
-
-            $pdfResult = $generator->generatePdf($config);
-            if ($pdfResult['success']) {
-                $results['generated']['pdf'][] = $config['title'];
-            } else {
-                $results['failed'][] = $config['title'] . ' (PDF: ' . $pdfResult['message'] . ')';
-            }
-
-            $flipbookResult = $generator->generateFlipbook($config);
-            if ($flipbookResult['success']) {
-                $results['generated']['flipbook'][] = $config['title'];
-            } else {
-                $results['failed'][] = $config['title'] . ' (Flipbook: ' . $flipbookResult['message'] . ')';
-            }
-            break;
+    // Generate each report type
+    foreach ($typesToGenerate as $type) {
+        generateReportType($generator, $config, $type, $results);
     }
 }
 
 // Build success message
 $message = 'Report generation completed.';
-
 if (count($results['failed']) > 0) {
     $message .= ' Some reports failed to generate.';
 }
