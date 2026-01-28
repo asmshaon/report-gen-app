@@ -24,6 +24,7 @@ function configManager() {
     return {
         configurations: [],
         loading: true,
+        generating: false,
 
         init() {
             store.registerCallback(this.fetchFromStore.bind(this));
@@ -73,6 +74,45 @@ function configManager() {
             } catch (error) {
                 console.error('Error deleting configuration:', error);
                 alert('Failed to delete configuration');
+            }
+        },
+
+        async generateReport(config) {
+            this.generating = true;
+
+            try {
+                const response = await fetch('app/api/generate_from_config.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: [config.id] })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    var message = 'Reports generated successfully!';
+                    if (result.data) {
+                        var generated = result.data.generated;
+                        var failed = result.data.failed || [];
+                        if (generated && (generated.html || generated.pdf || generated.flipbook)) {
+                            message = 'Successfully generated: ';
+                            var types = [];
+                            if (generated.html && generated.html.length > 0) types.push('HTML');
+                            if (generated.pdf && generated.pdf.length > 0) types.push('PDF');
+                            if (generated.flipbook && generated.flipbook.length > 0) types.push('Flipbook');
+                            message += types.join(', ');
+                        }
+                        if (failed.length > 0) {
+                            message += '\nFailed: ' + failed.join(', ');
+                        }
+                    }
+                    alert(message);
+                } else {
+                    alert(result.message || 'Failed to generate report');
+                }
+            } catch (error) {
+                console.error('Error generating report:', error);
+                alert('Failed to generate report');
+            } finally {
+                this.generating = false;
             }
         }
     };
